@@ -1,0 +1,21 @@
+language: java
+os: linux
+env:
+  global:
+    - HADOOP_ADDRESS=hdfs://localhost:9000
+
+sudo: required
+
+jdk:
+  - oraclejdk8
+
+#services:
+#  - hbase
+before_install:
+    - sudo sh hadoop-2.7.4/sbin/start-all.sh
+
+script: mvn clean install cobertura:cobertura
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+  
