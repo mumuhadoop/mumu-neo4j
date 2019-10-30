@@ -3,7 +3,6 @@ package com.lovecws.mumu.neo4j.driver;
 import com.google.common.collect.ImmutableMap;
 import org.apache.log4j.Logger;
 import org.junit.Test;
-import org.neo4j.driver.internal.logging.JULogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,14 +26,13 @@ public class Neo4jDriverNodeTest {
         driverOperation.createNode("person", "Person", map);
     }
 
-
     @Test
     public void createClassNodes() {
         List<Map<String, Object>> profiles = new ArrayList<>();
         profiles.add(ImmutableMap.of("id", 1, "name", "小班", "class_no", "101", "school", "惠佳新城幼儿园", "persons", 34));
         profiles.add(ImmutableMap.of("id", 2, "name", "中班", "class_no", "102", "school", "惠佳新城幼儿园", "persons", 54));
         profiles.add(ImmutableMap.of("id", 3, "name", "大班", "class_no", "103", "school", "惠佳新城幼儿园", "persons", 60));
-        driverOperation.mergeNodes("mumuclass", "MumuClass", profiles);
+        driverOperation.mergeNodes("MumuClass", profiles);
     }
 
     @Test
@@ -50,7 +48,7 @@ public class Neo4jDriverNodeTest {
         profiles.add(ImmutableMap.of("id", 8, "name", "陈大", "class_no", "103", "sex", "男", "height", 165));
         profiles.add(ImmutableMap.of("id", 9, "name", "陈二", "class_no", "103", "sex", "男", "height", 165));
 
-        driverOperation.mergeNodes("mumustudent", "MumuStudent", profiles);
+        driverOperation.mergeNodes("MumuStudent", profiles);
     }
 
 
@@ -102,7 +100,13 @@ public class Neo4jDriverNodeTest {
         profiles.add(ImmutableMap.of("id", 35, "name", "英语", "student_id", 9, "eval", "差", "grade", 55));
         profiles.add(ImmutableMap.of("id", 36, "name", "政治", "student_id", 9, "eval", "优异", "grade", 88));
 
-        List<List<Map<String, Object>>> mergeNodes = driverOperation.mergeNodes("mumugrade", "MumuGrade", profiles);
+        List<List<Map<String, Object>>> mergeNodes = driverOperation.mergeNodes("MumuGrade", profiles);
         log.info(mergeNodes);
+    }
+
+    @Test
+    public void returnAllByReleationShip() {
+        List<Map<String, Object>> maps = driverOperation.returnAllByReleationShip("MumuClassGradeShip");
+        log.info(maps);
     }
 }

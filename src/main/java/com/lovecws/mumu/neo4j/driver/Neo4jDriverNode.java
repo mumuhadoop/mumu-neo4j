@@ -89,11 +89,11 @@ public class Neo4jDriverNode {
     /**
      * 创建索引
      *
-     * @param labelName     标签名称
+     * @param nodeLabel     标签名称
      * @param attributeName 属性名称
      */
-    public List<Map<String, Object>> createIndex(String labelName, String attributeName) {
-        String cql = "CREATE INDEX ON :" + labelName + " (" + attributeName + ")";
+    public List<Map<String, Object>> createIndex(String nodeLabel, String attributeName) {
+        String cql = "CREATE INDEX ON :" + nodeLabel + " (" + attributeName + ")";
         return executionCQL(cql);
     }
 
@@ -101,35 +101,33 @@ public class Neo4jDriverNode {
     /**
      * 删除索引
      *
-     * @param labelName     标签名称
+     * @param nodeLabel     标签名称
      * @param attributeName 属性名称
      */
-    public List<Map<String, Object>> dropIndex(String labelName, String attributeName) {
-        String cql = "DROP INDEX ON :" + labelName + " (" + attributeName + ")";
+    public List<Map<String, Object>> dropIndex(String nodeLabel, String attributeName) {
+        String cql = "DROP INDEX ON :" + nodeLabel + " (" + attributeName + ")";
         return executionCQL(cql);
     }
 
     /**
      * 创建主键
      *
-     * @param nodeName      节点名称
-     * @param labelName     标签名称
+     * @param nodeLabel     标签名称
      * @param attributeName 属性名称
      */
-    public List<Map<String, Object>> createUniqueConstraint(String nodeName, String labelName, String attributeName) {
-        String cql = "CREATE CONSTRAINT ON (" + nodeName + ":" + labelName + ") ASSERT " + nodeName + "." + attributeName + " IS UNIQUE";
+    public List<Map<String, Object>> createUniqueConstraint(String nodeLabel, String attributeName) {
+        String cql = "CREATE CONSTRAINT ON (" + "n:" + nodeLabel + ") ASSERT " + "n." + attributeName + " IS UNIQUE";
         return executionCQL(cql);
     }
 
     /**
      * 删除主键
      *
-     * @param nodeName      节点名称
-     * @param labelName     标签名称
+     * @param nodeLabel     标签名称
      * @param attributeName 属性名称
      */
-    public List<Map<String, Object>> dropUniqueConstraint(String nodeName, String labelName, String attributeName) {
-        String cql = "CREATE CONSTRAINT ON (" + nodeName + ":" + labelName + ") ASSERT " + nodeName + "." + attributeName + " IS UNIQUE";
+    public List<Map<String, Object>> dropUniqueConstraint(String nodeLabel, String attributeName) {
+        String cql = "CREATE CONSTRAINT ON (" + "n:" + nodeLabel + ") ASSERT " + "n." + attributeName + " IS UNIQUE";
         return executionCQL(cql);
     }
 
@@ -144,6 +142,7 @@ public class Neo4jDriverNode {
     public List<Map<String, Object>> createOrMergeNode(String actionName, String nodeName, String nodeLabel, Map<String, Object> profileMap) {
         assert Arrays.asList("create", "merge").contains(actionName) && nodeName != null && nodeLabel != null;
         if (profileMap == null) profileMap = new HashMap<>();
+        if (StringUtils.isEmpty(nodeName)) nodeName = "n";
 
         List<String> nodeAttribute = new ArrayList<>();
         for (Map.Entry<String, Object> entry : profileMap.entrySet()) {
@@ -190,7 +189,8 @@ public class Neo4jDriverNode {
      * @param profiles   节点属性集合
      */
     public List<List<Map<String, Object>>> createOrMergeNodes(String actionName, String nodeName, String nodeLabel, List<Map<String, Object>> profiles) {
-        assert nodeName != null && nodeLabel != null;
+        assert nodeLabel != null;
+        if (StringUtils.isEmpty(nodeName)) nodeName = "n";
         if (profiles == null) profiles = new ArrayList<>();
 
         Driver driver = Neo4jConfiguration.getDriver();
@@ -226,14 +226,106 @@ public class Neo4jDriverNode {
     /**
      * 创建多节点
      */
-    public List<List<Map<String, Object>>> createNodes(String nodeName, String nodeLabel, List<Map<String, Object>> profiles) {
-        return createOrMergeNodes("create", nodeName, nodeLabel, profiles);
+    public List<List<Map<String, Object>>> createNodes(String nodeLabel, List<Map<String, Object>> profiles) {
+        return createOrMergeNodes("create", null, nodeLabel, profiles);
     }
 
     /**
      * 合并多节点
      */
-    public List<List<Map<String, Object>>> mergeNodes(String nodeName, String nodeLabel, List<Map<String, Object>> profiles) {
-        return createOrMergeNodes("merge", nodeName, nodeLabel, profiles);
+    public List<List<Map<String, Object>>> mergeNodes(String nodeLabel, List<Map<String, Object>> profiles) {
+        return createOrMergeNodes("merge", null, nodeLabel, profiles);
+    }
+
+    /**
+     * 删除无关系的节点
+     *
+     * @param nodeLabel 标签名称
+     * @return
+     */
+    public List<Map<String, Object>> deleteNoReleationShipNode(String nodeLabel) {
+        String cql = "MATCH (" + "n:" + nodeLabel + ") delete n";
+        return executionCQL(cql);
+    }
+
+    /**
+     * 删除关系下的所有节点和关系
+     *
+     * @param relationshipType 关系类型
+     * @return
+     */
+    public List<Map<String, Object>> deleteAllByReleationShip(String relationshipType) {
+        String cql = "match p=()-[r:" + relationshipType + "]->() delete p";
+        return executionCQL(cql);
+    }
+
+
+    /**
+     * 删除起始节点关联的所有节点和关系
+     *
+     * @param fromNodeLabel 开始节点标签
+     * @return
+     */
+    public List<Map<String, Object>> deleteAllByFromNodeLabel(String fromNodeLabel) {
+        String cql = "match p=(n:" + fromNodeLabel + ")-[]->() delete p";
+        return executionCQL(cql);
+    }
+
+
+    /**
+     * 删除起始节点关联的所有节点和关系
+     *
+     * @param endNodeLabel 结束节点标签
+     * @return
+     */
+    public List<Map<String, Object>> deleteAllByEndNodeLabel(String endNodeLabel) {
+        String cql = "match p=()-[]->(r:" + endNodeLabel + ") delete p";
+        return executionCQL(cql);
+    }
+
+    /**
+     * 删除节点的属性
+     *
+     * @param nodeLabel  标签名称
+     * @param profileKey 属性名称
+     * @return
+     */
+    public List<Map<String, Object>> removeNodeProfile(String nodeLabel, String profileKey) {
+        String cql = "MATCH (" + "n:" + nodeLabel + ") remove " + "n." + profileKey;
+        return executionCQL(cql);
+    }
+
+
+    /**
+     * 删除节点的属性
+     *
+     * @param fromNodeLabel 开始标签名称
+     * @return
+     */
+    public List<Map<String, Object>> returnAllByFromNodes(String fromNodeLabel) {
+        String cql = "match p=(n:" + fromNodeLabel + ")-[]->() return p";
+        return executionCQL(cql);
+    }
+
+    /**
+     * 删除节点的属性
+     *
+     * @param endNodeLabel 结束标签名称
+     * @return
+     */
+    public List<Map<String, Object>> returnAllByEndNodes(String endNodeLabel) {
+        String cql = "match p=()-[]->(n:" + endNodeLabel + ") return p";
+        return executionCQL(cql);
+    }
+
+    /**
+     * 删除节点的属性
+     *
+     * @param relationshipType 关系类型
+     * @return
+     */
+    public List<Map<String, Object>> returnAllByReleationShip(String relationshipType) {
+        String cql = "match p=()-[r:" + relationshipType + "]->() return p";
+        return executionCQL(cql);
     }
 }
